@@ -66,7 +66,6 @@ public class CubeScript : MonoBehaviour
             rigidbody.useGravity = true;
             rigidbody.isKinematic = false;
             speedVector = transform.position - tranformQueue.Peek();
-            Debug.Log("speedVector:" + speedVector);
             rigidbody.AddForce(speedVector * 4, ForceMode.VelocityChange);
             if (tranformQueue.Count > 0)
             {//clear the queue

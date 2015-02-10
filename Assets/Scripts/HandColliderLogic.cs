@@ -4,6 +4,7 @@ using System.Collections;
 public class HandColliderLogic : MonoBehaviour
 {
     private bool hasItemFocused = false;
+    private bool isReleasingObject = false;
     // Use this for initialization
     void Start()
     {
@@ -14,6 +15,13 @@ public class HandColliderLogic : MonoBehaviour
     void Update()
     {
 
+    }
+    /**The */
+    public void OnAttachChild(){
+        gameObject.GetComponent<Collider>().isTrigger = true;
+    }
+    public void OnReleaseChild() {
+        isReleasingObject = true;
     }
     void OnTriggerEnter(Collider theCollider)
     {
@@ -33,6 +41,11 @@ public class HandColliderLogic : MonoBehaviour
             //Free Object is white
             theCollider.gameObject.renderer.material.color = Color.white;
             theCollider.gameObject.tag = "Items";
+            if (isReleasingObject)
+            {
+                gameObject.GetComponent<Collider>().isTrigger = false;
+                isReleasingObject = false;
+            }
         }
     }
     void OnTriggerStay(Collider theCollider)

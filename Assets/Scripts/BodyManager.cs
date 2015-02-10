@@ -6,12 +6,12 @@ public class BodyManager : MonoBehaviour
 {
     /**Body nodes objects stored in a Dictionary*/
     private static Dictionary<BodyIDEnum, BodyNode> bodyNodes;
-    //public GameObject bodyModelGameObject;
-    public GameObject playerGraphicGameObject;
     private static Transform playerGraphicTrans;
     static public BodyManager instance; //the instance of our class that will do the work
-
+    //wait to calibrate delay in sec
+    public static float calibrateDelay = 2.0F;
     static bool isWaitingForCalibration = false;
+    private static bool mainBodyNodeIsPresent = false;
     void Awake()
     {
         instance = this;
@@ -19,22 +19,27 @@ public class BodyManager : MonoBehaviour
     void Start()
     {
         bodyNodes = new Dictionary<BodyIDEnum, BodyNode>();
-        playerGraphicTrans = playerGraphicGameObject.transform;
+        //main body
+        Quaternion flipQ = new Quaternion(0, 0, 0, 1);
+        bodyNodes.Add(BodyIDEnum.MAIN_BODY, new BodyNode(transform, flipQ, true));
+        //Arms
+        playerGraphicTrans = transform.FindChild("Graphics");
+        //right arm
         Transform armatureR = playerGraphicTrans.transform.Find("RightArm/Armature");
         Transform bigArmTransR = armatureR.GetChild(0);
-        Quaternion flipQ = new Quaternion(0, 0, -1, 0);
-        bodyNodes.Add(BodyIDEnum.BIG_ARM_R, new BodyNode(bigArmTransR, flipQ));
+        flipQ = new Quaternion(0, 0, -1, 0);
+        bodyNodes.Add(BodyIDEnum.BIG_ARM_R, new BodyNode(bigArmTransR, flipQ, false));
         Transform smallArmTransR = bigArmTransR.GetChild(0);
-        bodyNodes.Add(BodyIDEnum.SMALL_ARM_R, new BodyNode(smallArmTransR, flipQ));
+        bodyNodes.Add(BodyIDEnum.SMALL_ARM_R, new BodyNode(smallArmTransR, flipQ, false));
         Transform handTransR = smallArmTransR.GetChild(0);
-        bodyNodes.Add(BodyIDEnum.HAND_R, new BodyNode(handTransR, flipQ));
+        bodyNodes.Add(BodyIDEnum.HAND_R, new BodyNode(handTransR, flipQ, false));
         //left arm
         flipQ.Set(0, 0, 0, 1);
         Transform armatureL = playerGraphicTrans.transform.Find("LeftArm/Armature");
         Transform bigArmTransL = armatureL.GetChild(0);
-        bodyNodes.Add(BodyIDEnum.BIG_ARM_L, new BodyNode(bigArmTransL, flipQ));
+        bodyNodes.Add(BodyIDEnum.BIG_ARM_L, new BodyNode(bigArmTransL, flipQ, false));
         Transform smallArmTransL = bigArmTransL.GetChild(0);
-        bodyNodes.Add(BodyIDEnum.SMALL_ARM_L, new BodyNode(smallArmTransL, flipQ));
+        bodyNodes.Add(BodyIDEnum.SMALL_ARM_L, new BodyNode(smallArmTransL, flipQ, false));
     }
 
     // Update is called once per frame
@@ -54,7 +59,17 @@ public class BodyManager : MonoBehaviour
     }
     public static void setNodeQuaternion(IdQuaternion quaternion)
     {
+        //disable the PlayerRotation default roation if we received data from the main body tracker
+        if (!mainBodyNodeIsPresent && (BodyIDEnum)quaternion.id == BodyIDEnum.MAIN_BODY)
+        {
+            mainBodyNodeIsPresent = true;
+            instance.disableDefaultMainBodyRotation();
+        }
         bodyNodes[(BodyIDEnum)quaternion.id].setRawQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+    }
+    public void disableDefaultMainBodyRotation()
+    {
+        gameObject.GetComponent<PlayerRotation>().enabled = false;
     }
     /**The calibration routine for body tracking node*/
     public static void calibrateTpose()
@@ -63,7 +78,7 @@ public class BodyManager : MonoBehaviour
         {
             PluginManager.vibrateForMs(100);
             isWaitingForCalibration = true;
-            instance.StartCoroutine(instance.WaitAndCalibrate(2.0F));
+            instance.StartCoroutine(instance.WaitAndCalibrate(calibrateDelay));
         }
     }
     IEnumerator WaitAndCalibrate(float waitTime)
@@ -72,7 +87,7 @@ public class BodyManager : MonoBehaviour
         print("WaitAndCalibrate " + Time.time);
         foreach (var bone in bodyNodes)
         {
-            bone.Value.setRawAsInitial(playerGraphicTrans.rotation);
+            bone.Value.setRawAsInitial(Cardboard.SDK.HeadRotation);
         }
         isWaitingForCalibration = false;
         //vibrate phone a little bit to nodify the user the calibration is done

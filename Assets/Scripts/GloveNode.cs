@@ -32,8 +32,8 @@ public class GloveNode
     private float handOpenDegree = 15;
     private float handCloseDegree = 30;
 
-
-    private GameObject attachedObject;
+    //The hand object
+    private GameObject handObject;
 
     private Transform thumbIntePhaTransform;
     private Transform thumbDistPhaTransform;
@@ -44,13 +44,13 @@ public class GloveNode
 
     public GloveNode(GameObject gameobj)
     {
-        attachedObject = gameobj;
+        handObject = gameobj;
         //The code is expecting two object attached to the hand object
         //IndexProxPha and IndexProxPha/IndexIntePha
-        indexProxPhaTransform = attachedObject.transform.Find("IndexMeta/IndexProxPha");
+        indexProxPhaTransform = handObject.transform.Find("IndexMeta/IndexProxPha");
         indexIntePhaTransform = indexProxPhaTransform.Find("IndexIntePha");
 
-        thumbIntePhaTransform = attachedObject.transform.Find("ThumbProxPha/ThumbIntePha");
+        thumbIntePhaTransform = handObject.transform.Find("ThumbProxPha/ThumbIntePha");
         thumbDistPhaTransform = thumbIntePhaTransform.Find("ThumbDistPha");
     }
     /**
@@ -105,7 +105,10 @@ public class GloveNode
         {
             handIsOpen = false;
             if (GameObject.FindWithTag("FocusedItem") != null)
+            {
                 GameObject.FindWithTag("FocusedItem").SendMessage("AttachSelf");
+                handObject.transform.Find("AttachPoint").GetComponent<HandColliderLogic>().OnAttachChild();
+            }
         }
         else if (!handIsOpen && flexSensorBendDegree <= handOpenDegree)
         {
@@ -113,7 +116,10 @@ public class GloveNode
             Debug.Log("sending message to RealCube : ReleaseSelf");
             //TODO: uncomment this after the laggy finger issue is resolve
             if (GameObject.FindWithTag("AttachedItem") != null)
+            {
                 GameObject.FindWithTag("AttachedItem").SendMessage("ReleaseSelf");
+                handObject.transform.Find("AttachPoint").GetComponent<HandColliderLogic>().OnReleaseChild();
+            }
         }
         Debug.Log("flexSensorBendDegree" + flexSensorBendDegree);
     }
