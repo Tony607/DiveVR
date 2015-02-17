@@ -50,9 +50,12 @@ public class BodyManager : MonoBehaviour
         {
             calibrateTpose();
         }
-        foreach (var bone in bodyNodes)
+        foreach (KeyValuePair<BodyIDEnum, BodyNode> bone in bodyNodes)
         {
-            bone.Value.updateObjRoation();
+            if (bone.Key != BodyIDEnum.MAIN_BODY || mainBodyNodeIsPresent)
+            {
+                bone.Value.updateObjRoation();
+            }
         }
 
 #endif

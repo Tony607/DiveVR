@@ -79,13 +79,19 @@ public class StepControl : MonoBehaviour
             moveVector = new Vector3(joyVector.x, 0, joyVector.y);
             moveVector = transform.TransformDirection(moveVector);
             moveDirection *= moveSpeedJoy;
-            if (pendingJump) {
+            if (pendingJump)
+            {
                 moveVector.y = jumpSpeed;
                 pendingJump = false;
             }
         }
         moveVector.y -= gravity * Time.deltaTime;
-        controller.Move(moveVector * Time.deltaTime);
+        //since the controller.Move call is computational expensive, we only call it
+        //when needed(either, the joystick is non zero/ is jumping/ not on the ground)
+        if (joyVector != new Vector2(0, 0) || moveVector.y > 0 || !controller.isGrounded)
+        {
+            controller.Move(moveVector * Time.deltaTime);
+        }
     }
     /**Function called in the update function to move the Character controller using step detector data*/
     void chaseStep()

@@ -3,12 +3,12 @@ using System.Collections;
 using UnityEngine.UI;
 using SimpleJSON;
 
-public class PluginManager : MonoBehaviour
+public class SimplePluginManager : MonoBehaviour
 {
 #if !UNITY_EDITOR
     AndroidJavaClass pluginTutorialActivityJavaClass;
 #endif
-    static public PluginManager instance; //the instance of our class that will do the work
+    static public SimplePluginManager instance; //the instance of our class that will do the work
     void Awake()
     {
         instance = this;
@@ -61,7 +61,7 @@ public class PluginManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.C))
         {
             //Emulate a Crouch
-            str = "{\"a\":0,\"b\":3,\"c\":1,\"d\":0}";
+            str = "{\"a\":0,\"b\":0,\"c\":1,\"d\":0}";
             setWiiDataJSON(str);
         }
         if (Input.GetKeyUp(KeyCode.C))
@@ -73,13 +73,13 @@ public class PluginManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Z))
         {
             //Emulate a Jump
-            str = "{\"a\":0,\"b\":-3,\"c\":0,\"d\":1}";
+            str = "{\"a\":0,\"b\":3,\"c\":0,\"d\":1}";
             setWiiDataJSON(str);
         }
         if (Input.GetKeyUp(KeyCode.Z))
         {
             //Emulate a Jump
-            str = "{\"a\":0,\"b\":0,\"c\":0,\"d\":0}";
+            str = "{\"a\":0,\"b\":3,\"c\":0,\"d\":0}";
             setWiiDataJSON(str);
         }
         if (Input.GetKeyDown(KeyCode.V))
@@ -108,30 +108,23 @@ public class PluginManager : MonoBehaviour
     void setBodyQuaternionJSON(string quaternionJSON)
     {
         IdQuaternion quaternion = new IdQuaternion(quaternionJSON);
-        //send message to BodyManager
-        //TODO: remove the commented line once the static function call is verified to work
-        //SendMessage("setNodeQuaternion", quaternion);
-        BodyManager.setNodeQuaternion(quaternion);
+        if (quaternion.id == 0)// master node
+        {
+            Quaternion rawQ = new Quaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+            GameObject.Find("GameBone").SendMessage("setRawQuaternion", rawQ);
+        }
     }
     /**Function called by the Android plugin to set the new glove data*/
     void setGloveDataJSON(string gloveJSON)
     {
-        GloveManager.setGloveData(gloveJSON);
     }
     /**Function called by the Android plugin to set the new glove data*/
     void setWiiDataJSON(string wiiJSON)
     {
-        Debug.Log("wiiJSON:" + wiiJSON);
-        WiiManager.setWiiData(wiiJSON);
     }
     /**Function called by the Android plugin when cardboard trigger button is pushed*/
     void cardboardTrigger(string triggerType)
     {
-        if (triggerType == "X")
-        {
-            Debug.Log("Set initial orientation.");
-            BodyManager.calibrateTpose();
-        }
     }
     /**Function called by the Android plugin when barometer value changes*/
     void barometerValue(string sensorValue)
@@ -141,7 +134,5 @@ public class PluginManager : MonoBehaviour
     /**Function called by the Android plugin when step detector detect new step*/
     void stepDetected(string newstep)
     {
-        Debug.Log("stepDetected " + newstep);
-        StepControl.stepDetected();
     }
 }
